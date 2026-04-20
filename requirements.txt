@@ -1,0 +1,5 @@
+flask>=2.3.0
+cryptography>=41.0.0
+sounddevice>=0.4.5
+numpy>=1.24.0
+pycaw>=20221226; sys_platform == 'win32'
