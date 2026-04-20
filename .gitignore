@@ -116,3 +116,9 @@ node_modules/
 # Temporary files
 *.tmp
 *.temp
+
+# SSL/TLS Certificates - SECURITY: Never commit private keys!
+server.key
+server.crt
+*.pem
+*.key
