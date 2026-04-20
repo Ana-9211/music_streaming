@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wavelink</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- CREATE PLAYLIST MODAL -->
+<div class="modal-bg hidden" id="modal-bg">
+  <div class="modal">
+    <h3>New Playlist</h3>
+    <input id="modal-name" type="text" placeholder="Playlist name…"
+           onkeydown="if(event.key==='Enter')createPlaylist()"/>
+    <div class="modal-btns">
+      <button class="m-btn cancel"  onclick="closeModal()">Cancel</button>
+      <button class="m-btn confirm" onclick="createPlaylist()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYLIST PICKER MODAL -->
+<div class="modal-bg hidden" id="pl-picker-bg">
+  <div class="pl-picker">
+    <h3>Add to Playlist</h3>
+    <div class="pl-picker-sub" id="pl-picker-sub">Choose a playlist</div>
+    <div class="pl-picker-list" id="pl-picker-list"></div>
+    <div class="modal-btns">
+      <button class="m-btn cancel" onclick="closePlPicker()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD POPUP -->
+<div class="add-popup hidden" id="add-popup">
+  <div class="add-popup-item" onclick="addPopupQueue()">+ Add to Queue</div>
+  <div class="add-popup-divider"></div>
+  <div class="add-popup-item" onclick="addPopupPlaylist()">▶ Add to Playlist…</div>
+</div>
+
+<!-- CONNECT OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="connect-box">
+    <h2>WAVELINK</h2>
+    <p>Enter the server IP address to connect</p>
+    <input class="c-input" id="ip-input" type="text" placeholder="192.168.x.x"
+           onkeydown="if(event.key==='Enter')connect()"/>
+    <button class="c-btn" id="c-btn" onclick="connect()">Connect</button>
+    <div class="c-err" id="c-err"></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">WAVELINK</span>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-library"    onclick="switchTab('library')">Library</button>
+    <button class="nav-tab hidden" id="tab-nowplaying" onclick="switchTab('nowplaying')">Now Playing</button>
+  </div>
+  <div class="nav-right">
+    <button class="nav-demo-btn demo-on" id="demo-btn" onclick="toggleDemoMode()" title="Toggle buffer mode">DEMO</button>
+    <span class="nav-chip" id="nav-server">Not connected</span>
+    <span class="nav-chip" id="nav-status">Idle</span>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LIBRARY -->
+  <div class="screen active" id="screen-library">
+    <div class="lib-main">
+      <div class="lib-toolbar">
+        <h2 id="lib-title">Library</h2>
+        <span class="filter-label">Genre</span>
+        <select class="filter-select" id="filter-genre" onchange="applyFilters()">
+          <option value="">All</option>
+        </select>
+        <span class="filter-label">Language</span>
+        <select class="filter-select" id="filter-lang" onchange="applyFilters()">
+          <option value="">All</option>
+        </select>
+        <button class="nav-demo-btn" id="btn-shuffle" onclick="toggleShuffle()" style="margin-left:auto">Shuffle</button>
+      </div>
+      <div class="lib-count" id="lib-count"></div>
+      <div class="song-grid" id="song-grid"></div>
+    </div>
+    <div class="pl-panel">
+      <div class="pl-panel-head">
+        <span>Playlists</span>
+        <button class="pl-new-btn" onclick="openModal()">+ New</button>
+      </div>
+      <div class="pl-list" id="pl-list">
+        <div class="pl-empty">No playlists yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOW PLAYING -->
+  <div class="screen" id="screen-nowplaying">
+
+    <div class="np-left">
+      <div class="np-left-sec">
+        <div class="np-left-label">Active Playlist</div>
+        <div class="np-left-val" id="np-pl-name">None</div>
+      </div>
+      <div class="np-scroll" id="np-pl-list">
+        <div class="np-empty">No active playlist.</div>
+      </div>
+      <div class="np-log">
+        <div class="np-log-lbl">Activity</div>
+        <div class="np-log-body" id="np-log"></div>
+      </div>
+    </div>
+
+    <div class="np-center">
+      <div class="album-art" id="album-art">
+        <div class="art-ph" id="art-ph">
+          <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+            <circle cx="30" cy="30" r="22" stroke="#1DB954" stroke-width="2" stroke-dasharray="5 4"/>
+            <circle cx="30" cy="30" r="8"  fill="#1DB954" opacity=".3"/>
+            <circle cx="30" cy="30" r="3"  fill="#f0a030"/>
+          </svg>
+        </div>
+        <img id="art-img" src="" alt="" style="display:none"/>
+      </div>
+
+      <div class="now-title" id="now-title">No song selected</div>
+      <div class="now-tags"  id="now-tags"></div>
+
+      <div class="now-status">
+        <div class="status-dot" id="status-dot"></div>
+        <span class="now-status-text" id="status-text">Go to Library and select a song</span>
+      </div>
+
+      <!-- Switching banner (shown when changing songs) -->
+      <div class="switch-banner hidden" id="switch-banner">
+        <div class="switch-spinner"></div>
+        <span id="switch-text">Switching song…</span>
+      </div>
+    </div>
+
+    <div class="np-right">
+      <div class="np-right-head">Live Stats</div>
+      <div class="np-right-body">
+        <div class="stat-card">
+          <div class="stat-lbl">Up Next</div>
+          <div id="queue-items"><div class="q-empty">Queue empty.</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-lbl">Chunks received</div>
+          <div class="stat-val" id="s-chunks">0</div>
+          <div class="stat-bar"><div class="stat-bar-fill" id="b-chunks" style="width:0%;background:var(--accent)"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-lbl">Buffer delay</div>
+          <div><span class="stat-val" id="s-lat">0</span><span class="stat-unit">ms</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-lbl">Underruns</div>
+          <div class="stat-val" id="s-ur">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-lbl">Throughput</div>
+          <div><span class="stat-val" id="s-tp">0</span><span class="stat-unit">KB/s</span></div>
+          <div class="stat-bar"><div class="stat-bar-fill" id="b-tp" style="width:0%;background:var(--green)"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-lbl">Buffer depth</div>
+          <div class="mini-chart" id="mini-chart"></div>
+        </div>
+        <div class="stat-lbl" style="padding:4px 0 4px">History</div>
+        <div id="hist-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ERROR -->
+  <div class="screen" id="screen-error">
+    <div class="err-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+           stroke="#f03060" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8"  x2="12"    y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <div class="err-title" id="err-title">Error</div>
+    <div class="err-msg"   id="err-msg"></div>
+    <button class="err-retry" id="err-retry" onclick="retryConnect()">Try Again</button>
+  </div>
+
+</div>
+
+<!-- PLAYBAR -->
+<div class="playbar">
+  <div class="pb-left">
+    <div class="pb-vol">
+      <svg class="pb-vol-icon" id="vol-icon" onclick="toggleMute()"
+           width="16" height="16" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path id="vol-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>
+      </svg>
+      <input class="pb-vol-slider" id="vol-slider" type="range" min="0" max="100" value="70"
+             oninput="setVolume(this.value)"/>
+    </div>
+    <div>
+      <div class="pb-song-name" id="pb-name">Nothing playing</div>
+      <div class="pb-song-sub"  id="pb-sub">—</div>
+    </div>
+  </div>
+
+  <div class="pb-center">
+    <div class="pb-controls">
+      <button class="pb-btn" id="btn-loop" onclick="toggleLoop()" title="Loop">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polyline points="17 1 21 5 17 9"/>
+          <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <polyline points="7 23 3 19 7 15"/>
+          <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
+      </button>
+      <button class="pb-btn" onclick="prevSong()" title="Previous">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/>
+        </svg>
+      </button>
+      <button class="pb-play" id="pb-play" onclick="togglePause()">
+        <svg id="icon-pp" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 4l15 8-15 8V4z"/>
+        </svg>
+      </button>
+      <button class="pb-btn" onclick="skipSong()" title="Next">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
+        </svg>
+      </button>
+      <button class="pb-btn" id="btn-shuffle-pb" onclick="toggleShuffle()" title="Shuffle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polyline points="16 3 21 3 21 8"/>
+          <line x1="4" y1="20" x2="21" y2="3"/>
+          <polyline points="21 16 21 21 16 21"/>
+          <line x1="15" y1="15" x2="21" y2="21"/>
+        </svg>
+      </button>
+    </div>
+    <div class="pb-prog-wrap">
+      <span class="pb-time" id="pb-cur">0:00</span>
+      <div class="pb-track"><div class="pb-fill" id="pb-fill" style="width:0%"></div></div>
+      <span class="pb-time" id="pb-dur">0:00</span>
+    </div>
+  </div>
+
+  <div class="pb-right">
+    <div class="pb-up-lbl">Up Next</div>
+    <div class="pb-up-name" id="pb-upnext">—</div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
