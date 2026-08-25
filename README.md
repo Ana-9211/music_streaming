@@ -1,110 +1,71 @@
-# WAVELINK - SSL/TCP Audio Streaming Server
+# Wavelink
 
-A sophisticated music streaming application with encrypted audio transmission, featuring a Flask-based web UI and advanced playback controls.
+I built this project to learn how client/server systems behave when you move real data over a network instead of just handling in-memory operations.
 
-## Features
+The main focus was audio streaming over TCP, SSL/TLS, browser UI integration, buffering behavior, and how to make a small streaming system feel usable while still being understandable.
 
-- **Secure Streaming**: SSL/TLS encrypted TCP audio streaming with SHA-256 certificates
-- **Audio Format**: WAV file support with configurable chunking
-- **Playlist Management**: Create, save, and load playlists
-- **Playback Controls**: Play, pause, skip, shuffle, loop, and volume control
-- **Queue System**: Dynamic queue management with prev/next navigation
-- **Live Stats**: Monitor latency, throughput, chunk count, and audio underruns
-- **Genre Tagging**: Organize music with custom genre tags
-- **Buffering Modes**: Demo mode and smooth mode for optimal playback
-- **Web UI**: Spotify-inspired dark theme interface
-- **Multi-Client Support**: Up to 5 concurrent clients
+## What I was trying to learn
+
+- how TCP streams work in practice
+- how SSL/TLS changes the data flow and trust model
+- how buffering and packet timing affect audio playback
+- how a browser UI can talk to a local streaming service
+- how to separate server logic, client logic, and UI logic cleanly enough to reason about
+
+## What the project does
+
+This is a small music streaming system with:
+
+- secure TCP audio transfer
+- browser-based controls
+- playlist management
+- audio playback and queue behavior
+- basic streaming metadata and monitoring
 
 ## Architecture
 
-### Components
+- `server.py` — main streaming server, SSL layer, and local web interface
+- `client.py` — client side that connects to the stream and plays audio
+- `index.html`, `style.css`, `app.js` — browser UI
+- `music/` — audio files and metadata
+- `playlists/` — saved playlist data
 
-- **Server** (`server.py`): Listens on TCP port 9893, streams WAV files with SSL encryption. Web monitor on port 9894.
-- **Client** (`client.py`): Connects over SSL, receives audio stream, plays via sounddevice with volume control.
-- **Web UI** (`index.html`, `style.css`, `app.js`): Browser-based interface for playlist management and playback control.
+## What I learned from building it
 
-### Configuration
+The most useful part was not the final application. It was the debugging.
 
-- `STREAM_PORT`: 9893 (Audio streaming)
-- `WEB_PORT`: 9894 (Flask web monitor)
-- `CHUNK_SIZE`: 4096 bytes
-- `MAX_CLIENTS`: 5 concurrent connections
+I had to think about:
 
-## Installation
+- what happens when chunks arrive late or out of order
+- how playback smoothness changes when buffering is too small or too large
+- how encryption changes the trust boundaries between server and client
+- why a listening script and a browser UI can look fine individually but behave differently together
 
-See [INSTALLATION.md](INSTALLATION.md) for detailed setup instructions.
+## What went wrong or surprised me
 
-## Quick Start
+One of the biggest surprises was how much the system depends on timing. A streaming app that seems simple on the surface becomes much more complex when you start thinking about chunk delivery, buffering, and UI responsiveness together.
 
-### Start the Server
+I also learned that a project can look “finished” while still being very rough in terms of real-world reliability. This version is good as a learning project, but it would need more work before I would treat it as a production-like system.
+
+## How to run
+
+See [INSTALLATION.md](INSTALLATION.md) for setup details.
+
+Typical flow:
+
 ```bash
 python server.py
-```
-
-The server will:
-- Generate SSL certificates if not present
-- Start listening for connections on port 9893
-- Launch a web monitor on http://localhost:9894
-
-### Start the Client
-```bash
 python client.py
 ```
 
-The client will:
-- Connect to the server via SSL/TCP
-- Open a browser window with the playback UI
-- Stream and play audio in real-time
+## What I would do differently now
 
-## Music Directory Structure
+- split the networking logic from playback logic more cleanly
+- make the buffering system easier to reason about
+- add more explicit monitoring and recovery states
+- improve the playlist and metadata design
+- make validation and testing easier for edge cases
 
-```
-music/
-├── Song Name.wav          # Audio file
-└── Song Name.jpg          # Album artwork
+## Current takeaway
 
-playlists/
-└── playlist_name.json     # Saved playlists
-
-song_tags.json             # Genre/metadata tags
-```
-
-## File Descriptions
-
-- `server.py` - Main server with SSL streaming and Flask web interface
-- `client.py` - Client with audio playback and buffering logic
-- `app.js` - Frontend playback control and UI state management
-- `index.html` - Web interface template
-- `style.css` - Spotify-inspired UI styling
-- `server.crt`, `server.key` - SSL/TLS certificates (auto-generated)
-- `song_tags.json` - Genre and metadata mappings for songs
-
-## Dependencies
-
-See `requirements.txt` for Python dependencies:
-- flask
-- cryptography
-- sounddevice
-- numpy
-- pycaw (Windows audio control)
-
-## Security
-
-- All audio transmission is encrypted with SHA-256 SSL/TLS
-- Certificates auto-generated on first run if not present
-- Private key stored locally and never transmitted
-
-## Performance
-
-- Adaptive buffering with demo and smooth modes
-- Real-time throughput and latency monitoring
-- Automatic underrun detection and recovery
-- Efficient chunk-based streaming
-
-## License
-
-MIT License - See LICENSE file for details
-
-## Author
-
-Ana-9211
+This project is a good example of practical systems learning: networking, timing, security, and UI all meet in one place. It is not just a demo — it is a project where I learned how much engineering a streaming app really involves.
